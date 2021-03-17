@@ -26,7 +26,7 @@ The name of the file to use for wildcard domains. For example, `wildcard.mydomai
 - uses: catchco/sslmate-certificate-installer
   with:
     distro: ubuntu2004
-    api-key: 123456
+    api-key: ${{ secrets.SSLMATE_API_KEY }}
     certificate-directory: ssl_certificates
     certificate-domain: wildcard.mydomain.com
     certificate-key-content: ${{ secrets.WILDCARD_MYDOMAIN_COM_KEY }}
