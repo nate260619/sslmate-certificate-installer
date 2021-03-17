@@ -37,35 +37,35 @@ runs:
         sudo apt-get update
         sudo apt-get install sslmate
 
-      - name: Add certificate key
-        shell: bash
-        run: |
-          mkdir $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}
-          cat > $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}/${{ inputs.certificate-domain }}.key <<- EOF
-          ${{ inputs.certificate-key-content }}
-          EOF      
+    - name: Add certificate key
+      shell: bash
+      run: |
+      mkdir $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}
+        cat > $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}/${{ inputs.certificate-domain }}.key <<- EOF
+        ${{ inputs.certificate-key-content }}
+        EOF      
 
-      - name: Configure SSLMate
-        shell: bash
-        run: |
-          cat > $HOME/.sslmate <<- EOF
-          api_key ${{ inputs.api-key }}
-          key_directory $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}
-          cert_directory $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}
-          cert_format.p12 yes
-          wildcard_filename ${{ inputs.wildcard-filename || 'wildcard' }}
-          EOF
+    - name: Configure SSLMate
+      shell: bash
+      run: |
+        cat > $HOME/.sslmate <<- EOF
+        api_key ${{ inputs.api-key }}
+        key_directory $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}
+        cert_directory $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}
+        cert_format.p12 yes
+        wildcard_filename ${{ inputs.wildcard-filename || 'wildcard' }}
+        EOF
 
-      - name: Download Certs
-        shell: bash
-        run: |
-          sslmate download --all
+    - name: Download Certs
+      shell: bash
+      run: |
+        sslmate download --all
 
-      - name: Get SSL thumbprint script
-        id: ssl-thumbprint
-        shell: bash
-        run: |          
-          thumbprint=$(openssl x509 -in $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}/${{ inputs.certificate-domain }}.crt -noout -fingerprint)
-          thumbprint=${thumbprint:17}
-          thumbprint=${thumbprint//:}
-          echo "::set-output name=thumbprint::${thumbprint}"
+    - name: Get SSL thumbprint script
+      id: ssl-thumbprint
+      shell: bash
+      run: |          
+        thumbprint=$(openssl x509 -in $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}/${{ inputs.certificate-domain }}.crt -noout -fingerprint)
+        thumbprint=${thumbprint:17}
+        thumbprint=${thumbprint//:}
+        echo "::set-output name=thumbprint::${thumbprint}"
