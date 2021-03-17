@@ -3,14 +3,14 @@ description: "Installs an SSLMate certificate"
 inputs:
   distro:
     description: "The shortname for the distro being used by the build machine."
-    required: true
+    required: false
     default: ubuntu2004
   api-key:
     description: "Your SSLMate api key"
     required: true
   certificate-directory:
     description: "The path within the home directory where the certificates will be stored."
-    required: true
+    required: false
     default: "ssl_certificates"
   certificate-domain:
     description: "The name of the domain to which the certificate applies"
@@ -18,6 +18,10 @@ inputs:
   certificate-key-content:
     description: "The SSL key file content"
     required: true
+  wildcard-filename:
+    description: "The filename to be used for wildcard domains. (e.g. wildcard.mydomain.com instead of *.mydomain.com)."
+    required: false
+    default: wildcard
 outputs:
   ssl-certificate-thumbprint:
     description: "The thumbprint of the SSL certificate that was downloaded."
@@ -28,16 +32,16 @@ runs:
     - name: Download and install SSLMate
       shell: bash
       run: |
-        sudo wget -P /etc/apt/sources.list.d https://sslmate.com/apt/${{ inputs.distro }}/sslmate1.list
-        sudo wget -P /etc/apt/trusted.gpg.d https://sslmate.com/apt/${{ inputs.distro }}/sslmate.gpg
+        sudo wget -P /etc/apt/sources.list.d https://sslmate.com/apt/${{ inputs.distro || 'ubuntu2004' }}/sslmate1.list
+        sudo wget -P /etc/apt/trusted.gpg.d https://sslmate.com/apt/${{ inputs.distro || 'ubuntu2004' }}/sslmate.gpg
         sudo apt-get update
         sudo apt-get install sslmate
 
       - name: Add certificate key
         shell: bash
         run: |
-          mkdir $HOME/${{ inputs.certificate-directory }}
-          cat > $HOME/${{ inputs.certificate-directory }}/${{ inputs.certificate-domain }}.key <<- EOF
+          mkdir $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}
+          cat > $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}/${{ inputs.certificate-domain }}.key <<- EOF
           ${{ inputs.certificate-key-content }}
           EOF      
 
@@ -46,21 +50,22 @@ runs:
         run: |
           cat > $HOME/.sslmate <<- EOF
           api_key ${{ inputs.api-key }}
-          key_directory $HOME/${{ inputs.certificate-directory }}
-          cert_directory $HOME/${{ inputs.certificate-directory }}
+          key_directory $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}
+          cert_directory $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}
           cert_format.p12 yes
-          wildcard_filename wildcard
+          wildcard_filename ${{ inputs.wildcard-filename || 'wildcard' }}
           EOF
 
       - name: Download Certs
         shell: bash
-        run: sslmate download --all
+        run: |
+          sslmate download --all
 
       - name: Get SSL thumbprint script
         id: ssl-thumbprint
         shell: bash
         run: |          
-          thumbprint=$(openssl x509 -in $HOME/${{ inputs.certificate-directory }}/${{ inputs.certificate-domain }}.crt -noout -fingerprint)
+          thumbprint=$(openssl x509 -in $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}/${{ inputs.certificate-domain }}.crt -noout -fingerprint)
           thumbprint=${thumbprint:17}
           thumbprint=${thumbprint//:}
           echo "::set-output name=thumbprint::${thumbprint}"
