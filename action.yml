@@ -40,7 +40,7 @@ runs:
     - name: Add certificate key
       shell: bash
       run: |
-      mkdir $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}
+        mkdir $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}
         cat > $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}/${{ inputs.certificate-domain }}.key <<- EOF
         ${{ inputs.certificate-key-content }}
         EOF      
