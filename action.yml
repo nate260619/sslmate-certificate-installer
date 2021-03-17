@@ -1,5 +1,4 @@
 name: "SSLMate Certificate Installer"
-author: "Catch Co"
 description: "Installs an SSLMate certificate"
 inputs:
   distro:
@@ -12,7 +11,7 @@ inputs:
   certificate-directory:
     description: "The path within the home directory where the certificates will be stored."
     required: true
-    default: "certs"
+    default: "ssl_certificates"
   certificate-domain:
     description: "The name of the domain to which the certificate applies"
     required: true
@@ -52,11 +51,11 @@ runs:
           cert_format.p12 yes
           wildcard_filename wildcard
           EOF
-          
+
       - name: Download Certs
         shell: bash
         run: sslmate download --all
-        
+
       - name: Get SSL thumbprint script
         id: ssl-thumbprint
         shell: bash
@@ -65,6 +64,3 @@ runs:
           thumbprint=${thumbprint:17}
           thumbprint=${thumbprint//:}
           echo "::set-output name=thumbprint::${thumbprint}"
-          
-
-  
