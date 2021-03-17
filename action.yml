@@ -25,7 +25,7 @@ inputs:
 outputs:
   ssl-certificate-thumbprint:
     description: "The thumbprint of the SSL certificate that was downloaded."
-    value: ${{ steps.ssl-thumbprint.outputs.thumbprint }}
+    value: ${{ steps.ssl-thumbprint.outputs.sslthumbprint }}
 runs:
   using: "composite"
   steps:
@@ -68,4 +68,4 @@ runs:
         thumbprint=$(openssl x509 -in $HOME/${{ inputs.certificate-directory || 'ssl_certificates' }}/${{ inputs.certificate-domain }}.crt -noout -fingerprint)
         thumbprint=${thumbprint:17}
         thumbprint=${thumbprint//:}
-        echo "::set-output name=thumbprint::${thumbprint}"
+        echo "::set-output name=sslthumbprint::$(echo $thumbprint)"
