@@ -1,0 +1,70 @@
+name: "SSLMate Certificate Installer"
+author: "Catch Co"
+description: "Installs an SSLMate certificate"
+inputs:
+  distro:
+    description: "The shortname for the distro being used by the build machine."
+    required: true
+    default: ubuntu2004
+  api-key:
+    description: "Your SSLMate api key"
+    required: true
+  certificate-directory:
+    description: "The path within the home directory where the certificates will be stored."
+    required: true
+    default: "certs"
+  certificate-domain:
+    description: "The name of the domain to which the certificate applies"
+    required: true
+  certificate-key-content:
+    description: "The SSL key file content"
+    required: true
+outputs:
+  ssl-certificate-thumbprint:
+    description: "The thumbprint of the SSL certificate that was downloaded."
+    value: ${{ steps.ssl-thumbprint.outputs.thumbprint }}
+runs:
+  using: "composite"
+  steps:
+    - name: Download and install SSLMate
+      shell: bash
+      run: |
+        sudo wget -P /etc/apt/sources.list.d https://sslmate.com/apt/${{ inputs.distro }}/sslmate1.list
+        sudo wget -P /etc/apt/trusted.gpg.d https://sslmate.com/apt/${{ inputs.distro }}/sslmate.gpg
+        sudo apt-get update
+        sudo apt-get install sslmate
+
+      - name: Add certificate key
+        shell: bash
+        run: |
+          mkdir $HOME/${{ inputs.certificate-directory }}
+          cat > $HOME/${{ inputs.certificate-directory }}/${{ inputs.certificate-domain }}.key <<- EOF
+          ${{ inputs.certificate-key-content }}
+          EOF      
+
+      - name: Configure SSLMate
+        shell: bash
+        run: |
+          cat > $HOME/.sslmate <<- EOF
+          api_key ${{ inputs.api-key }}
+          key_directory $HOME/${{ inputs.certificate-directory }}
+          cert_directory $HOME/${{ inputs.certificate-directory }}
+          cert_format.p12 yes
+          wildcard_filename wildcard
+          EOF
+          
+      - name: Download Certs
+        shell: bash
+        run: sslmate download --all
+        
+      - name: Get SSL thumbprint script
+        id: ssl-thumbprint
+        shell: bash
+        run: |          
+          thumbprint=$(openssl x509 -in $HOME/${{ inputs.certificate-directory }}/${{ inputs.certificate-domain }}.crt -noout -fingerprint)
+          thumbprint=${thumbprint:17}
+          thumbprint=${thumbprint//:}
+          echo "::set-output name=thumbprint::${thumbprint}"
+          
+
+  
